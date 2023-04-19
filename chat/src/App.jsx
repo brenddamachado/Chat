@@ -1,14 +1,20 @@
-import {useAuthState, useSignInWithGoogle} from 'react-firebase-hooks/auth';
-import './App.css';
-import { auth, databaseApp } from './serves/firebaseConfig';
-import { collection, orderBy } from 'firebase/firestore';
+import { getAuth } from "firebase/auth";
+import { addDoc, collection, limit, orderBy, query, serverTimestamp } from "firebase/firestore";
+import { useRef, useState } from "react";
+import { useAuthState, useSignInWithGoogle } from "react-firebase-hooks/auth";
+import { useCollectionData } from "react-firebase-hooks/firestore";
+import "./App.css";
+import { app, databaseApp } from "./serves/firebaseConfig";
+
+const auth = getAuth(app);
 
 export const App = () => {
   const [user] = useAuthState(auth);
+
   return (
     <div className="App">
       <header>
-        <h1> ReactChat</h1>
+        <h1> Chat</h1>
         <SignOut/>
       </header>
       <section>
@@ -20,34 +26,53 @@ export const App = () => {
 
 
 export const ChatRoom= () => {
- const menssageRef = collection(databaseApp, 'messages')
- const QueryMessagens = query(menssageRef, orderBy('createdAt'), limit(25));
- const [messages] = useCollectionData(QueryMessagens, {IdField: 'id'});
+  const dummy = useRef()
+ const messageRef = collection(databaseApp, 'messages');
+ const q = query(messageRef, orderBy('createdAt'), limit(25));
+ const [messages] = useCollectionData(q, {IdField: 'id'});
+ 
  const [formValue, setformValue] = useState('');
- const sendMessage = (e) => {
-  e.preventDefault();
-  
- }
+ const sendMessage = async (e) => {
+  e.preventDefault()
+
+  const { photoURL, uid} = auth.currentUser;
+
+  await addDoc(messageRef,{
+    text: formValue,
+    uid,
+    photoURL,
+    createdAt: serverTimestamp(),
+  });
+  setformValue('')
+  dummy.current.scrollIntoView({behavior: 'smooth'})
+ };
  
  return(
   <>
   <main>
-    {
-      messages && messages.map((msg, index) => (
-       <ChatMessage key={index}  menssage={msg}/>)
+    {messages &&
+       messages.map((msg, index) => (
+       <ChatMessage key={index}  message={msg}/>)
       )
     }
+    <div ref={dummy}></div>
   </main>
-  
+  <form onSubmit={sendMessage}>
+    <input type='text' 
+    value={formValue} 
+    onChange={(e) => setformValue(e.target.value)}
+   />
+    <button>enviar</button>
+  </form>
   </>
  )
 };
 
 export const ChatMessage= (props) => {
-  const {text, photoURL, uid} = props.menssage;
-  const menssageClass = uid === auth.currentUser.uid ? 'send' : 'received';
+  const {text, photoURL, uid} = props.message;
+  const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
   return (
-<div className={`menssage ${menssageClass}`}>
+<div className={`message ${messageClass}`}>
   <img src= {photoURL}/>
   <p>{text}</p>
 </div>
@@ -60,7 +85,7 @@ export const SignIn = () => {
 
   return (
      <button className="sign-in" onClick={() => signInWithGoogle()}>
-      logar com Google
+      logar com o Google
       </button>
   );
 };
