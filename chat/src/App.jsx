@@ -10,7 +10,9 @@ export const App = () => {
         <h1> ReactChat</h1>
         <SignOut/>
       </header>
-      <section></section>
+      <section>
+      {user ? <ChatRoom /> : <SignIn />}
+      </section>
     </div>
     )
 }
@@ -22,18 +24,23 @@ export const ChatRoom= () => {
 
 
 export const SignIn = () => {
-  const [useSignInWithGoogle ]= useSignInWithGoogle(auth);
-  return (<button className='
-  sign-in' onClick={() => useSignInWithGoogle()}> Logar com Google
-  </button>
+  const [signInWithGoogle] = useSignInWithGoogle(auth);
+
+  return (
+     <button className="sign-in" onClick={() => signInWithGoogle()}>
+      logar com Google
+      </button>
   );
 };
-
 export const SignOut= () => {
-  return auth.currentUser && <button className='sign-out'
-   onClick={() => auth.SignOut()}>
+  return (
+    auth.currentUser && (
+    <button className='sign-out'
+   onClick={() => auth.signOut()}>
     sair
-  </button> ;
+  </button> 
+    )
+  );
    
   
-}
+};
